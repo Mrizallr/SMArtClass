@@ -35,11 +35,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } = await supabase.auth.getSession();
 
       if (session?.user) {
+        // --- PERBAIKAN 1: Ganti .single() menjadi .maybeSingle() ---
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", session.user.id)
-          .single();
+          .maybeSingle(); // Mengembalikan null jika tidak ada, tanpa error
 
         set({
           user: session.user,
@@ -48,7 +49,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           isLoading: false,
         });
       } else {
-        // ✅ Penting: pastikan loading selesai dan auth diset ke false
         set({
           user: null,
           profile: null,
@@ -57,14 +57,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
       }
 
-      // 🔁 Listen for auth state changes
       supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === "SIGNED_IN" && session?.user) {
+          // --- PERBAIKAN 2: Ganti .single() menjadi .maybeSingle() ---
           const { data: profile } = await supabase
             .from("profiles")
             .select("*")
             .eq("id", session.user.id)
-            .single();
+            .maybeSingle(); // Mengembalikan null jika tidak ada, tanpa error
 
           set({
             user: session.user,
@@ -100,11 +100,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error;
 
       if (data.user) {
+        // --- PERBAIKAN 3: Ganti .single() menjadi .maybeSingle() ---
         const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", data.user.id)
-          .single();
+          .maybeSingle(); // Mengembalikan null jika tidak ada, tanpa error
 
         set({
           user: data.user,
@@ -129,7 +130,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error || !data.user) throw error;
 
-      // ✅ Tambahkan profil ke tabel profiles setelah signUp
       await supabase.from("profiles").insert([
         {
           id: data.user.id,

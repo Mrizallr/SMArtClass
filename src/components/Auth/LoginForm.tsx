@@ -285,6 +285,8 @@ export const LoginForm: React.FC = () => {
                 )}
               </div>
 
+              {/* --- BAGIAN INI DI-KOMENTARI SESUAI PERMINTAAN --- */}
+              {/*
               <div>
                 <label
                   htmlFor="role"
@@ -307,6 +309,7 @@ export const LoginForm: React.FC = () => {
                   </p>
                 )}
               </div>
+              */}
 
               <button
                 type="submit"
@@ -314,7 +317,7 @@ export const LoginForm: React.FC = () => {
                 className="w-full bg-gradient-to-r from-green-600 to-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:from-green-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
               >
                 <UserPlus className="h-5 w-5" />
-                <span>{isLoading ? "Mendaftar..." : "Daftar"}</span>
+                <span>{isLoading ? "Mendaftar..." : "Daftar"} </span>
               </button>
             </form>
           )}
