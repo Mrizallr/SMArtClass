@@ -23,8 +23,7 @@ interface DataState {
     id: string,
     updates: Database["public"]["Tables"]["texts"]["Update"]
   ) => Promise<boolean>;
-  archiveText: (id: string) => Promise<boolean>; // ← renamed from deleteText
-  restoreText: (id: string) => Promise<boolean>;
+  deleteText: (id: string) => Promise<boolean>; // Diubah dari archiveText, dan restoreText dihapus
 
   // Question operations
   fetchQuestions: (textId?: string) => Promise<void>;
@@ -63,7 +62,9 @@ export const useDataStore = create<DataState>((set, get) => ({
   progress: [],
   isLoading: false,
 
+  // =================================================================
   // TEXTS
+  // =================================================================
   fetchTexts: async () => {
     try {
       set({ isLoading: true });
@@ -102,19 +103,22 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  // FUNGSI DIUBAH UNTUK LEBIH AMAN DAN MENGHINDARI ERROR 406
   updateText: async (id, updates) => {
     try {
-      const { data, error } = await supabase
+      // 1. Jalankan update dan hanya periksa error
+      const { error } = await supabase
         .from("texts")
         .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+        .eq("id", id);
 
       if (error) throw error;
 
+      // 2. Perbarui state lokal secara langsung
       set((state) => ({
-        texts: state.texts.map((text) => (text.id === id ? data : text)),
+        texts: state.texts.map((text) =>
+          text.id === id ? { ...text, ...updates } : text
+        ),
       }));
       return true;
     } catch (error) {
@@ -123,26 +127,10 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
-  archiveText: async (id) => {
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    console.log("UID login:", user?.id); // ← tampilkan UID yang sedang login
-
-    if (authError) {
-      console.error("Auth error:", authError.message);
-      return false;
-    }
-
+  // FUNGSI DIUBAH DARI 'archiveText' MENJADI 'deleteText' UNTUK HAPUS PERMANEN
+  deleteText: async (id) => {
     try {
-      const { data, error } = await supabase
-        .from("texts")
-        .update({ is_archived: true })
-        .eq("id", id)
-        .select()
-        .single();
+      const { error } = await supabase.from("texts").delete().eq("id", id);
 
       if (error) throw error;
 
@@ -151,32 +139,14 @@ export const useDataStore = create<DataState>((set, get) => ({
       }));
       return true;
     } catch (error) {
-      console.error("Error archiving text:", error);
-      return false;
-    }
-  },
-  restoreText: async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("texts")
-        .update({ is_archived: false })
-        .eq("id", id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      set((state) => ({
-        texts: [data, ...state.texts.filter((text) => text.id !== id)],
-      }));
-      return true;
-    } catch (error) {
-      console.error("Error restoring text:", error);
+      console.error("Error deleting text:", error);
       return false;
     }
   },
 
+  // =================================================================
   // QUESTIONS
+  // =================================================================
   fetchQuestions: async (textId) => {
     try {
       let query = supabase.from("questions").select("*");
@@ -248,7 +218,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  // =================================================================
   // ANSWERS
+  // =================================================================
   submitAnswer: async (answer) => {
     try {
       const { data, error } = await supabase
@@ -294,7 +266,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  // =================================================================
   // PROGRESS
+  // =================================================================
   fetchProgress: async (userId) => {
     try {
       let query = supabase.from("progress").select("*");
@@ -343,7 +317,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     }
   },
 
+  // =================================================================
   // STATS
+  // =================================================================
   getStudentStats: async (userId) => {
     try {
       const { data: progressData } = await supabase

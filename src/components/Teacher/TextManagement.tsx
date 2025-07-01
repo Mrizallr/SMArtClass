@@ -7,24 +7,22 @@ import {
   Search,
   Filter,
   BookOpen,
-  ArrowUpCircle,
-  Upload,
 } from "lucide-react";
 import { useDataStore } from "../../store/dataStore";
 import { Text } from "../../types";
 import { TextForm } from "./TextForm";
 import { TextPreview } from "./TextPreview";
-import { uploadImage } from "../../lib/supabaseUpload";
-import toast from "react-hot-toast";
 
 export const TextManagement: React.FC = () => {
-  const { texts, archiveText, restoreText } = useDataStore();
+  // DIUBAH: Menggunakan deleteText dan menghapus restoreText
+  const { texts, deleteText } = useDataStore();
   const [showForm, setShowForm] = useState(false);
   const [editingText, setEditingText] = useState<Text | null>(null);
   const [previewText, setPreviewText] = useState<Text | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("all");
-  const [showArchived, setShowArchived] = useState(false);
+  // DIHAPUS: State untuk menampilkan arsip tidak lagi diperlukan
+  // const [showArchived, setShowArchived] = useState(false);
 
   const genreLabels = {
     all: "Semua Genre",
@@ -43,14 +41,14 @@ export const TextManagement: React.FC = () => {
     persuasive: "bg-purple-100 text-purple-800 border-purple-200",
   };
 
+  // DIUBAH: Logika filter disederhanakan, tidak ada lagi filter arsip
   const filteredTexts = texts.filter((text) => {
-    const isArchivedMatch = showArchived ? text.is_archived : !text.is_archived;
     const matchesGenre =
       selectedGenre === "all" || text.genre === selectedGenre;
     const matchesSearch =
       text.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       text.content.toLowerCase().includes(searchTerm.toLowerCase());
-    return isArchivedMatch && matchesGenre && matchesSearch;
+    return matchesGenre && matchesSearch;
   });
 
   const handleEdit = (text: Text) => {
@@ -58,17 +56,19 @@ export const TextManagement: React.FC = () => {
     setShowForm(true);
   };
 
+  // DIUBAH: Menggunakan deleteText dan pesan konfirmasi baru
   const handleDelete = async (id: string) => {
-    if (window.confirm("Apakah Anda yakin ingin mengarsipkan teks ini?")) {
-      await archiveText(id);
+    if (
+      window.confirm(
+        "Apakah Anda yakin ingin menghapus teks ini? Tindakan ini tidak dapat dibatalkan."
+      )
+    ) {
+      await deleteText(id);
     }
   };
 
-  const handleRestore = async (id: string) => {
-    if (window.confirm("Pulihkan teks ini dari arsip?")) {
-      await restoreText(id);
-    }
-  };
+  // DIHAPUS: Fungsi handleRestore tidak lagi diperlukan
+  // const handleRestore = ...
 
   const handleCloseForm = () => {
     setShowForm(false);
@@ -80,13 +80,7 @@ export const TextManagement: React.FC = () => {
   };
 
   if (showForm) {
-    return (
-      <TextForm
-        text={editingText}
-        onClose={handleCloseForm}
-        // Tambahkan prop untuk upload image di dalam form jika perlu
-      />
-    );
+    return <TextForm text={editingText} onClose={handleCloseForm} />;
   }
 
   if (previewText) {
@@ -110,9 +104,7 @@ export const TextManagement: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             Kelola Teks Bacaan
           </h1>
-          <p className="text-gray-600">
-            Tambah, edit, arsipkan, atau pulihkan teks bacaan
-          </p>
+          <p className="text-gray-600">Tambah, edit, atau hapus teks bacaan</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -152,17 +144,7 @@ export const TextManagement: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showArchived}
-              onChange={(e) => setShowArchived(e.target.checked)}
-              className="form-checkbox h-4 w-4 text-blue-600"
-            />
-            <label className="text-sm text-gray-700">
-              Tampilkan teks terarsip
-            </label>
-          </div>
+          {/* DIHAPUS: Checkbox untuk menampilkan arsip */}
         </div>
       </div>
 
@@ -234,9 +216,8 @@ export const TextManagement: React.FC = () => {
                             ...text,
                             illustration_url:
                               text.illustration_url ?? undefined,
-                            createdBy: (text as any).createdBy ?? "",
-                            createdAt:
-                              (text as any).createdAt ?? text.created_at ?? "",
+                            createdBy: (text as any).created_by,
+                            createdAt: (text as any).created_at,
                           })
                         }
                         className="text-blue-600 hover:text-blue-900 p-1 rounded"
@@ -250,9 +231,8 @@ export const TextManagement: React.FC = () => {
                             ...text,
                             illustration_url:
                               text.illustration_url ?? undefined,
-                            createdBy: (text as any).createdBy ?? "",
-                            createdAt:
-                              (text as any).createdAt ?? text.created_at ?? "",
+                            createdBy: (text as any).created_by,
+                            createdAt: (text as any).created_at,
                           })
                         }
                         className="text-indigo-600 hover:text-indigo-900 p-1 rounded"
@@ -260,23 +240,14 @@ export const TextManagement: React.FC = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </button>
-                      {!text.is_archived ? (
-                        <button
-                          onClick={() => handleDelete(text.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded"
-                          title="Arsipkan"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleRestore(text.id)}
-                          className="text-green-600 hover:text-green-900 p-1 rounded"
-                          title="Pulihkan"
-                        >
-                          <ArrowUpCircle className="h-4 w-4" />
-                        </button>
-                      )}
+                      {/* DIUBAH: Hanya ada tombol hapus, tidak ada lagi tombol pulihkan */}
+                      <button
+                        onClick={() => handleDelete(text.id)}
+                        className="text-red-600 hover:text-red-900 p-1 rounded"
+                        title="Hapus"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
